@@ -12,7 +12,7 @@ public class TheObserver : TerrariaPlugin
     public override string Name => "The Observer";
     public override string Description => "Detects unusual item activities";
     public override string Author => "Soofa";
-    public override Version Version => new Version(0, 1, 3);
+    public override Version Version => new Version(0, 1, 5);
     public TheObserver(Main game) : base(game) { }
     public override void Initialize()
     {
@@ -25,12 +25,18 @@ public class TheObserver : TerrariaPlugin
     {
         if (args.Player.Active && args.Player.Group.Name != TShock.Config.Settings.DefaultGuestGroupName && !args.Player.HasPermission("theobserver.ignore") && IsSus(args.Type, args.Stack))
         {
-            if (RecentSuspiciousPlayers.ContainsKey(args.Player.Index) && RecentSuspiciousPlayers[args.Player.Index].Item1 == args.Type &&
-                (DateTime.UtcNow - RecentSuspiciousPlayers[args.Player.Index].Item2).TotalMinutes < 5) {
-                return;
+            if (RecentSuspiciousPlayers.ContainsKey(args.Player.Index))
+            {
+                if (RecentSuspiciousPlayers[args.Player.Index].Item1 == args.Type &&
+                (DateTime.UtcNow - RecentSuspiciousPlayers[args.Player.Index].Item2).TotalMinutes < 5)
+                {
+                    return;
+                }
+
+                RecentSuspiciousPlayers.Remove(args.Player.Index);
             }
-            
-            RecentSuspiciousPlayers.TryAdd(args.Player.Index, (args.Type, DateTime.UtcNow));
+
+            RecentSuspiciousPlayers.Add(args.Player.Index, (args.Type, DateTime.UtcNow));
             TSPlayer.All.SendMessage($"[The Observer] > {args.Player.Name} has [i/s{args.Stack},p/{args.Prefix}:{args.Type}]", 220, 40, 40);
         }
     }
@@ -42,7 +48,11 @@ public class TheObserver : TerrariaPlugin
 
     private static int CalculateSlotValue(int type, int stack)
     {
-        return Math.Abs(stack * (ContentSamples.ItemsByType[type].rare));
+        int dupePowFactor = stack == 255 || stack == 9999 ? 2 : 1;
+        double value = Math.Pow(ContentSamples.ItemsByType[type].rare, dupePowFactor);
+        value = Math.Abs(value * stack);
+
+        return (int)value;
     }
 
     private static bool IsAmmo(int type)
