@@ -12,11 +12,86 @@ public class TheObserver : TerrariaPlugin
     public override string Name => "The Observer";
     public override string Description => "Detects unusual item activities";
     public override string Author => "Soofa";
-    public override Version Version => new Version(0, 1, 5);
+    public override Version Version => new Version(0, 1, 6);
     public TheObserver(Main game) : base(game) { }
     public override void Initialize()
     {
         GetDataHandlers.PlayerSlot += OnPlayerSlot;
+
+        Commands.ChatCommands.Add(new Command("theobserver.rate", RateCmd, "rate"));
+
+        Data.Read();
+    }
+
+    private static void RateCmd(CommandArgs args)
+    {
+        int rating;
+
+        if (args.Parameters.Count == 0 || !int.TryParse(args.Parameters[0], out rating))
+        {
+            args.Player.SendErrorMessage("Please choose a number between 0 and 10. (10 meaning this report was spot on right, 0 meaning it was an awful report.)");
+            return;
+        }
+
+        rating = rating > 10 ? 10 : (rating < 0 ? 0 : rating);    // if rating is lesser than 0 then set it as 0, if it's greater than 10 then set it as 10
+        double trainingValue = GetTrainingValueFromRating(rating);
+        UpdateCurrentValue(GetProgressFactor() + trainingValue);
+    }
+
+    private static double GetTrainingValueFromRating(int rating)
+    {
+        return -0.002 * rating + 0.01;
+    }
+
+    private static void UpdateCurrentValue(double newValue)
+    {
+        if (NPC.downedMoonlord)
+        {
+            Data.PostML = newValue;
+        }
+        else if (NPC.downedAncientCultist)
+        {
+            Data.PostCultist = newValue;
+        }
+        else if (NPC.downedGolemBoss)
+        {
+            Data.PostGolem = newValue;
+        }
+        else if (NPC.downedPlantBoss)
+        {
+            Data.PostPlantera = newValue;
+        }
+        else if (NPC.downedMechBoss1 && NPC.downedMechBoss2 && NPC.downedMechBoss3)
+        {
+            Data.PostAllMech = newValue;
+        }
+        else if (NPC.downedMechBossAny)
+        {
+            Data.PostAnyMech = newValue;
+        }
+        else if (Main.hardMode)
+        {
+            Data.PostWOF = newValue;
+        }
+        else if (NPC.downedBoss3)
+        {
+            Data.PostSkeletron = newValue;
+        }
+        else if (NPC.downedBoss2)
+        {
+            Data.PostEvilBoss = newValue;
+        }
+        else if (NPC.downedBoss1)
+        {
+            Data.PostEOC = newValue;
+        }
+        else
+        {
+            Data.PreBossValue = newValue;
+        }
+
+
+        Data.Write();
     }
 
     private static Dictionary<int, (int, DateTime)> RecentSuspiciousPlayers = new Dictionary<int, (int, DateTime)>();
@@ -60,48 +135,48 @@ public class TheObserver : TerrariaPlugin
         return ContentSamples.ItemsByType[type].ammo != 0;
     }
 
-    private static int GetProgressFactor()
+    private static double GetProgressFactor()
     {
         if (NPC.downedMoonlord)
         {
-            return 11;
+            return Data.PostML;
         }
         if (NPC.downedAncientCultist)
         {
-            return 10;
+            return Data.PostCultist;
         }
         if (NPC.downedGolemBoss)
         {
-            return 9;
+            return Data.PostGolem;
         }
         if (NPC.downedPlantBoss)
         {
-            return 8;
+            return Data.PostPlantera;
         }
         if (NPC.downedMechBoss1 && NPC.downedMechBoss2 && NPC.downedMechBoss3)
         {
-            return 7;
+            return Data.PostAllMech;
         }
         if (NPC.downedMechBossAny)
         {
-            return 6;
+            return Data.PostAnyMech;
         }
         if (Main.hardMode)
         {
-            return 5;
+            return Data.PostWOF;
         }
         if (NPC.downedBoss3)
         {
-            return 4;
+            return Data.PostSkeletron;
         }
         if (NPC.downedBoss2)
         {
-            return 3;
+            return Data.PostEvilBoss;
         }
         if (NPC.downedBoss1)
         {
-            return 2;
+            return Data.PostEOC;
         }
-        return 1;
+        return Data.PreBossValue;
     }
 }
