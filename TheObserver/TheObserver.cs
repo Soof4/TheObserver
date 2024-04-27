@@ -1,4 +1,5 @@
 ﻿using System.Drawing.Imaging;
+using System.Reflection;
 using Terraria;
 using Terraria.ID;
 using TerrariaApi.Server;
@@ -19,8 +20,23 @@ public class TheObserver : TerrariaPlugin
         GetDataHandlers.PlayerSlot += OnPlayerSlot;
 
         Commands.ChatCommands.Add(new Command("theobserver.rate", RateCmd, "rate"));
+        Commands.ChatCommands.Add(new Command("theobserver.admin", BossFactors, "factors"));
 
         Data.Read();
+    }
+
+    private static void BossFactors(CommandArgs args)
+    {
+        string msg = "";
+        
+        PropertyInfo[] properties = typeof(Data).GetProperties(BindingFlags.Static | BindingFlags.Public);
+
+        foreach (PropertyInfo p in properties)
+        {
+            msg += $"{p.Name} : {p.GetValue(null)}\n";
+        }
+
+        args.Player.SendInfoMessage(msg);
     }
 
     private static void RateCmd(CommandArgs args)

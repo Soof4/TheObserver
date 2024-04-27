@@ -1,3 +1,4 @@
+using System.Reflection;
 using Terraria;
 using TShockAPI;
 
@@ -5,7 +6,7 @@ namespace TheObserver
 {
     public class Data
     {
-        public static string DataPath = Path.Combine(TShock.SavePath, "TheObserver.dat");
+        private static string DataPath = Path.Combine(TShock.SavePath, "TheObserver.dat");
         public static double PreBossValue { get; set; } = 1;
         public static double PostEOC { get; set; } = 2;
         public static double PostEvilBoss { get; set; } = 3;
@@ -21,22 +22,18 @@ namespace TheObserver
         public static void Write()
         {
             using (FileStream fs = new FileStream(DataPath, FileMode.Create))
-            using (StreamWriter sw = new StreamWriter(fs))
             {
-                sw.Write(PreBossValue);
-                sw.Write(PostEOC);
-                sw.Write(PostEvilBoss);
-                sw.Write(PostSkeletron);
-                sw.Write(PostWOF);
-                sw.Write(PostAnyMech);
-                sw.Write(PostAllMech);
-                sw.Write(PostPlantera);
-                sw.Write(PostGolem);
-                sw.Write(PostCultist);
-                sw.Write(PostML);
+                PropertyInfo[] properties = typeof(Data).GetProperties(BindingFlags.Static | BindingFlags.Public);
+
+                foreach (PropertyInfo p in properties)
+                {
+                    byte[] byteArray = new byte[sizeof(double)];
+                    BitConverter.TryWriteBytes(byteArray, (double)p.GetValue(null)!);
+
+                    fs.Write(byteArray);
+                }
             }
         }
-
         public static void Read()
         {
             if (!File.Exists(DataPath))
@@ -46,19 +43,18 @@ namespace TheObserver
             }
 
             using (FileStream fs = new FileStream(DataPath, FileMode.Open))
-            using (StreamReader sr = new StreamReader(fs))
             {
-                char[] buffer = new char[4];
-                sr.Read(buffer);
-                
-                byte[] byteBuffer = new byte[8];
+                PropertyInfo[] properties = typeof(Data).GetProperties(BindingFlags.Static | BindingFlags.Public);
 
-                for (int i = 0; i < 4; i++) {
-                    byteBuffer[i] = (byte)(buffer[i] & 0xFF00);    // 11111111 00000000
-                    byteBuffer[i + 1] = (byte)(buffer[i] & 0xFF);  // 00000000 11111111
+                foreach (PropertyInfo p in properties)
+                {
+                    Span<byte> bytes = new byte[sizeof(double)];
+
+                    fs.Read(bytes);
+                    double val = BitConverter.ToDouble(bytes);
+
+                    p.SetValue(null, val);
                 }
-
-                double val = BitConverter.ToDouble(byteBuffer, 0);
             }
         }
     }
