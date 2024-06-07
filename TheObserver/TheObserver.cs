@@ -13,7 +13,7 @@ public class TheObserver : TerrariaPlugin
     public override string Name => "The Observer";
     public override string Description => "Detects unusual item activities";
     public override string Author => "Soofa";
-    public override Version Version => new Version(0, 1, 6);
+    public override Version Version => new Version(0, 1, 7);
     public TheObserver(Main game) : base(game) { }
     public override void Initialize()
     {
@@ -139,7 +139,7 @@ public class TheObserver : TerrariaPlugin
 
     private static int CalculateSlotValue(int type, int stack)
     {
-        int dupePowFactor = stack == 255 || stack == 9999 ? 2 : 1;
+        int dupePowFactor = stack == 255 || stack == 9999 ? 3 : 1;
         double value = Math.Pow(ContentSamples.ItemsByType[type].rare, dupePowFactor);
         value = Math.Abs(value * stack);
 
