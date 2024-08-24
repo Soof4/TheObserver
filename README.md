@@ -1,6 +1,8 @@
 # TheObserver
 A TShock plugin that tries to detect suspicious item activities.
 
+If you want to read this in another language: [Spanish](https://github.com/Soof4/TheObserver/blob/main/README_SPANISH.md)
+
 ## Permissions
 | Permissions        | Desciption                                       |
 |--------------------|--------------------------------------------------|
